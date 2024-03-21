@@ -1,8 +1,26 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import axios from "axios";
 function App() {
-  const [username, setUsername] = useState("");
+  axios.defaults.withCredentials = true;
+  const [role, setRole] = useState("");
+  const [loginStatus, setLoginStatus] = useState(false);
+  const [user, setUser] = useState(null);
+
+  const [refetch, setRefetch] = useState(false);
+
+  useEffect(() => {
+    axios.get("http://localhost:8000/login").then((response) => {
+      console.log(response);
+      if (response.data.loggedIn == true) {
+        setLoginStatus(true);
+        setRole(response.data.user[0].role);
+        setUser(response.data.user[0]);
+      }
+    });
+  }, [refetch]);
+  console.log("Role", role);
+  console.log("User", user);
   const handleRegister = async (event) => {
     event.preventDefault();
     const username = event.target.regusername.value;
@@ -15,7 +33,6 @@ function App() {
         } else {
           alert("Failed");
         }
-        console.log(response);
       });
   };
   const handleLogin = async (event) => {
@@ -27,17 +44,30 @@ function App() {
       .then((response) => {
         if (response.status === 200) {
           alert("Successfull");
-          setUsername(response.data[0]?.username);
+          setRefetch(!refetch);
         } else {
           alert("Failed");
         }
-        console.log(response);
       });
+  };
+
+  const handleLogout = () => {
+    axios.get("http://localhost:8000/logout").then((response) => {
+      if (response.status === 200) {
+        setLoginStatus(false);
+        setRole("");
+        setUser(null);
+        alert("Successfully logged out");
+      } else {
+        alert("Logout failed");
+      }
+    });
   };
 
   return (
     <div className="container">
-      <h1>{username}</h1>
+      <h1>{user?.username}</h1>
+      {loginStatus && <button onClick={handleLogout}>Log Out</button>}
       <div className="auth-container">
         <h1>Register</h1>
         <form onSubmit={handleRegister} className="auth-form">
